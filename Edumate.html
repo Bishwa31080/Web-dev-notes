@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EduMate Arena — Fully Functional CSE Studio & AI Platform</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .perspective-1000 { perspective: 1000px; }
+    .transform-style-3d { transform-style: preserve-3d; }
+    .backface-hidden { backface-visibility: hidden; }
+    .rotate-y-180 { transform: rotateY(180deg); }
+    
+    @keyframes sun-glow {
+      0% {
+        box-shadow: 0 0 20px rgba(251, 191, 36, 0.6), 0 0 40px rgba(245, 158, 11, 0.4), inset 0 0 15px rgba(254, 243, 199, 0.8);
+        transform: scale(1) rotate(0deg);
+      }
+      50% {
+        box-shadow: 0 0 35px rgba(251, 191, 36, 0.9), 0 0 70px rgba(245, 158, 11, 0.6), inset 0 0 25px rgba(254, 243, 199, 1);
+        transform: scale(1.06) rotate(180deg);
+      }
+      100% {
+        box-shadow: 0 0 20px rgba(251, 191, 36, 0.6), 0 0 40px rgba(245, 158, 11, 0.4), inset 0 0 15px rgba(254, 243, 199, 0.8);
+        transform: scale(1) rotate(360deg);
+      }
+    }
+    .sun-orb-anim { animation: sun-glow 6s infinite ease-in-out; }
+    .mic-live-pulse { animation: pulse-ring 1.4s infinite ease-in-out; }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.2); opacity: 0.25; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-brand-500 selection:text-white relative transition-colors duration-300">
+  <!-- Top Header Navigation -->
+  <header class="border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur sticky top-0 z-40 transition-colors duration-300">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-brand-500/25">
+          <i data-lucide="terminal" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+          <span class="font-extrabold text-lg tracking-tight">Edu<span class="text-brand-600 dark:text-brand-400">Mate</span> Arena</span>
+          <span id="activeTeamBadge" class="hidden sm:inline-block ml-2 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">Solo Room</span>
+        </div>
+      </div>
+      <div class="hidden lg:flex items-center gap-2">
+        <button onclick="openCreateSessionModal()" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-semibold border border-slate-300 dark:border-slate-700 transition flex items-center gap-1.5">
+          <i data-lucide="users" class="w-3.5 h-3.5 text-brand-500"></i> Create Session
+        </button>
+        <button onclick="openJoinSessionModal()" class="px-3 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold shadow transition flex items-center gap-1.5">
+          <i data-lucide="key-round" class="w-3.5 h-3.5"></i> Join Code
+        </button>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="navUserName" class="hidden md:inline text-xs font-semibold text-slate-500">Host (You)</span>
+        <button id="themeToggleBtn" onclick="toggleThemeMode()" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition flex items-center justify-center shadow-sm" title="Toggle Light/Dark Mode">
+          <i id="themeIcon" data-lucide="sun" class="w-4 h-4 text-amber-500"></i>
+        </button>
+        <div class="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 rounded-full text-xs font-mono text-amber-600 dark:text-amber-400 font-bold shadow-sm" title="Consecutive Daily Logins Streak">
+          <span>🔥</span>
+          <span id="streakCountDisplay">1 Day Streak</span>
+        </div>
+        <div id="authLoggedOut" class="flex items-center gap-2">
+          <button onclick="openAuthModal('login')" class="px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition flex items-center gap-1.5">
+            <i data-lucide="log-in" class="w-3.5 h-3.5"></i> Log In
+          </button>
+          <button onclick="openAuthModal('signup')" class="px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-brand-600 hover:bg-brand-500 text-white shadow-md shadow-brand-600/30 transition flex items-center gap-1.5">
+            <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> Sign Up
+          </button>
+        </div>
+        <div id="authLoggedIn" class="hidden flex items-center gap-2.5">
+          <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-1">
+            <div id="userAvatarChar" class="w-6 h-6 rounded-full bg-brand-600 text-white font-bold text-[11px] flex items-center justify-center">U</div>
+            <div class="text-left">
+              <p id="userProfileName" class="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-tight">Student</p>
+              <p id="userProfileEmail" class="text-[10px] text-slate-500 leading-tight font-mono">user@example.com</p>
+            </div>
+          </div>
+          <button onclick="logoutUser()" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-500 border border-slate-200 dark:border-slate-700 text-slate-500 transition" title="Log Out">
+            <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Feature Navigation Tabs Bar -->
+  <div class="bg-white/90 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 px-4 sticky top-16 z-30 transition-colors duration-300">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+      <nav class="flex items-center gap-2 py-2 overflow-x-auto w-full">
+        <button id="tab-btn-dsa" onclick="switchMainTab('dsa')" class="tab-btn flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-brand-600 text-white shadow-md shadow-brand-600/30 transition shrink-0">
+          <i data-lucide="code-2" class="w-4 h-4"></i> DSA Studio
+        </button>
+        <button id="tab-btn-tracker" onclick="switchMainTab('tracker')" class="tab-btn flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800 transition shrink-0">
+          <i data-lucide="pie-chart" class="w-4 h-4 text-emerald-500"></i> Progress Tracker
+        </button>
+        <button id="tab-btn-flashcards" onclick="switchMainTab('flashcards')" class="tab-btn flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800 transition shrink-0">
+          <i data-lucide="layers" class="w-4 h-4"></i> CS Flashcards
+        </button>
+        <button id="tab-btn-mindmaps" onclick="switchMainTab('mindmaps')" class="tab-btn flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800 transition shrink-0">
+          <i data-lucide="git-fork" class="w-4 h-4"></i> Visual Mindmaps
+        </button>
+        <button id="tab-btn-todo" onclick="switchMainTab('todo')" class="tab-btn flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800 transition shrink-0">
+          <i data-lucide="check-square" class="w-4 h-4"></i> Shared Timetable
+        </button>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Workspace Grid Layout -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start transition-all duration-300">
+    <!-- LEFT COLS -->
+    <div id="mainWorkspaceCol" class="lg:col-span-8 flex flex-col gap-6 transition-all duration-300">
+      
+      <!-- VIEW 1: DSA STUDIO -->
+      <div id="tab-content-dsa" class="tab-content flex flex-col gap-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 p-3 rounded-2xl shadow-sm">
+          <div class="flex items-center gap-2 text-xs flex-1 min-w-[240px]">
+            <span class="text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-[11px]">Select:</span>
+            <select id="dsaProblemSelector" onchange="onSelectChange()" class="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 text-slate-800 dark:text-slate-200 text-xs focus:outline-none focus:border-brand-500 flex-1"></select>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="openAddQuestionModal()" class="px-2.5 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs flex items-center gap-1 transition">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Question
+            </button>
+            <span id="dsaCounter" class="text-[11px] font-mono text-slate-600 dark:text-slate-400 px-2.5 py-1 bg-slate-100 dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800 font-bold">1 / 1</span>
+            <button onclick="prevProblem()" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition border border-slate-300 dark:border-slate-700 flex items-center justify-center"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+            <button onclick="nextProblem()" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition border border-slate-300 dark:border-slate-700 flex items-center justify-center"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+          </div>
+        </div>
+        <div id="dsaProblemCard" class="p-4 bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs text-slate-700 dark:text-slate-300 leading-relaxed shadow-lg"></div>
+        <div class="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col gap-3">
+          <div class="flex flex-wrap items-center justify-between text-xs text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 pb-2 gap-2">
+            <div class="flex items-center gap-2">
+              <span class="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5"><i data-lucide="file-code" class="w-3.5 h-3.5 text-brand-600 dark:text-brand-400"></i> Language:</span>
+              <select id="editorLangSelector" onchange="onLanguageChange()" class="bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-800 dark:text-slate-200 font-mono focus:border-brand-500 outline-none">
+                <option value="python">Python 3 (.py)</option>
+                <option value="cpp">C++ (C++20)</option>
+                <option value="java">Java 17 (.java)</option>
+                <option value="javascript">JavaScript (Node.js)</option>
+                <option value="csharp">C# (.NET 8)</option>
+              </select>
+            </div>
+            <span class="text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-1 font-mono"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active Room Sync</span>
+          </div>
+          <textarea id="dsaEditor" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 min-h-[340px] resize-none leading-relaxed" placeholder="Write your solution here..."></textarea>
+          <div class="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-slate-200 dark:border-slate-800/60 mt-1">
+            <div id="dsaRunStatus" class="text-xs font-mono text-slate-500 dark:text-slate-400">Ready. Test your algorithm with the Run button.</div>
+            <div class="flex items-center gap-2">
+              <button onclick="openSolutionModal()" class="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition border border-slate-300 dark:border-slate-700"><i data-lucide="help-circle" class="w-3.5 h-3.5 text-amber-500"></i> View Solution</button>
+              <button onclick="runVerification()" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1.5 transition shadow-lg shadow-emerald-900/20"><i data-lucide="play" class="w-3.5 h-3.5"></i> Run Code</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 2: PROGRESS TRACKER -->
+      <div id="tab-content-tracker" class="tab-content hidden flex flex-col gap-6">
+        <div class="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-xl flex flex-col gap-4">
+          <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+            <div>
+              <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2"><i data-lucide="pie-chart" class="w-4 h-4 text-emerald-500"></i> Placement & Mastery Progress Tracker</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Stats start at 0% and increase only when you successfully pass code problems.</p>
+            </div>
+            <button onclick="resetTrackerData()" class="text-xs px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 transition">Reset Stats</button>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col gap-2">
+            <div class="flex justify-between items-center text-xs">
+              <span class="text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider font-mono">Overall Placement Readiness</span>
+              <span id="overallPercentageLabel" class="text-emerald-600 dark:text-emerald-400 font-mono font-bold text-sm">0% Completed</span>
+            </div>
+            <div class="w-full bg-slate-200 dark:bg-slate-800 h-3 rounded-full overflow-hidden">
+              <div id="overallProgressBar" class="bg-gradient-to-r from-brand-600 to-emerald-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+            <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800"><span class="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-mono">Total Solved</span><p id="statSolved" class="text-xl font-bold text-emerald-600 dark:text-emerald-400 font-mono mt-1">0 / 100</p></div>
+            <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800"><span class="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-mono">Easy Mastered</span><p id="statEasy" class="text-xl font-bold text-emerald-600 dark:text-emerald-400 font-mono mt-1">0 / 35</p></div>
+            <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800"><span class="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-mono">Medium Mastered</span><p id="statMedium" class="text-xl font-bold text-amber-600 dark:text-amber-400 font-mono mt-1">0 / 45</p></div>
+            <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800"><span class="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-mono">Hard Mastered</span><p id="statHard" class="text-xl font-bold text-rose-600 dark:text-rose-400 font-mono mt-1">0 / 20</p></div>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div class="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-xl flex flex-col items-center gap-3">
+            <h4 class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider font-mono">DSA Difficulty Breakdown</h4>
+            <div class="relative w-48 h-48 flex items-center justify-center">
+              <canvas id="dsaPieCanvas" width="190" height="190" class="w-full h-full"></canvas>
+              <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span id="dsaPieCenterPct" class="text-base font-extrabold text-slate-800 dark:text-white font-mono">0%</span>
+                <span class="text-[9px] text-slate-500 dark:text-slate-400 uppercase tracking-widest font-mono">Overall</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-4 text-[11px] text-slate-600 dark:text-slate-400 pt-1">
+              <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Easy</span>
+              <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Medium</span>
+              <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Hard</span>
+            </div>
+          </div>
+          <div class="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-xl flex flex-col items-center gap-3">
+            <h4 class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider font-mono">CS Fundamentals Mastery</h4>
+            <div class="relative w-48 h-48 flex items-center justify-center">
+              <canvas id="csPieCanvas" width="190" height="190" class="w-full h-full"></canvas>
+              <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span id="csPieCenterPct" class="text-base font-extrabold text-slate-800 dark:text-white font-mono">0%</span>
+                <span class="text-[9px] text-slate-500 dark:text-slate-400 uppercase tracking-widest font-mono">Core CS</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 text-[11px] text-slate-600 dark:text-slate-400 pt-1">
+              <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span> OS</span>
+              <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> DBMS</span>
+              <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> CN</span>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-xl flex flex-col gap-4">
+          <h4 class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider font-mono border-b border-slate-200 dark:border-slate-800 pb-2.5">Individual Chapter Progress & Percentages</h4>
+          <div id="chapterProgressList" class="space-y-4 text-xs"></div>
+        </div>
+      </div>
+
+      <!-- VIEW 3: FLASHCARDS -->
+      <div id="tab-content-flashcards" class="tab-content hidden flex flex-col gap-4">
+        <div class="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-xl">
+          <div>
+            <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2"><i data-lucide="layers" class="w-4 h-4 text-brand-600 dark:text-brand-400"></i> Core CS Technical Viva Flashcards</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Click card to flip between Interview Scenario and Optimal Answer.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="openAddFlashcardModal()" class="px-2.5 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs flex items-center gap-1 transition">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Flashcard
+            </button>
+            <select id="flashcardFilter" onchange="filterFlashcards()" class="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 text-slate-800 dark:text-slate-200 text-xs focus:outline-none focus:border-brand-500">
+              <option value="All">All Chapters</option>
+              <option value="Operating Systems">Operating Systems</option>
+              <option value="DBMS">DBMS</option>
+              <option value="Computer Networks">Computer Networks</option>
+              <option value="System Design & OOP">System Design & OOP</option>
+              <option value="Arrays & Hashing">Arrays & Hashing</option>
+              <option value="Trees & Graphs">Trees & Graphs</option>
+            </select>
+          </div>
+        </div>
+        <div class="perspective-1000 w-full min-h-[320px] cursor-pointer" onclick="flipFlashcard()">
+          <div id="flashcardInner" class="relative w-full h-[320px] rounded-2xl transition-transform duration-500 transform-style-3d border border-slate-200 dark:border-slate-800 shadow-2xl bg-white dark:bg-slate-900/90">
+            <div class="absolute inset-0 w-full h-full p-6 backface-hidden flex flex-col justify-between rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950 border border-slate-200 dark:border-slate-800">
+              <div class="flex items-center justify-between">
+                <span id="fcCategory" class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-300 border border-brand-500/20 font-mono">Operating Systems</span>
+                <span class="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1"><i data-lucide="rotate-cw" class="w-3 h-3"></i> Click anywhere to Flip</span>
+              </div>
+              <div class="my-auto text-center px-4">
+                <span class="text-xs text-amber-600 dark:text-amber-400 font-mono font-semibold uppercase tracking-wider mb-2 block">Interview Scenario</span>
+                <h4 id="fcQuestion" class="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 leading-snug"></h4>
+              </div>
+              <div class="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500 pt-2 border-t border-slate-200 dark:border-slate-800/80">
+                <span id="fcNumber">Card 1 of 6</span>
+                <span class="text-slate-500 dark:text-slate-400 text-[11px]">Hover & Click for Technical Derivation</span>
+              </div>
+            </div>
+            <div class="absolute inset-0 w-full h-full p-6 backface-hidden rotate-y-180 flex flex-col justify-between rounded-2xl bg-gradient-to-br from-indigo-50/70 via-white to-slate-100 dark:from-brand-950/70 dark:via-slate-900 dark:to-slate-950 border border-brand-300 dark:border-brand-700/40">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-mono">Standard Viva Answer & Trap</span>
+                <span class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1"><i data-lucide="rotate-ccw" class="w-3 h-3"></i> Click to Flip Back</span>
+              </div>
+              <div class="my-auto text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-relaxed overflow-y-auto max-h-[200px] pr-1">
+                <p id="fcAnswer" class="whitespace-pre-line font-mono text-slate-600 dark:text-slate-300"></p>
+              </div>
+              <div class="text-[11px] text-amber-600 dark:text-amber-300/80 font-mono pt-2 border-t border-slate-200 dark:border-slate-800">💡 High-Yield Key: <span id="fcKey"></span></div>
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center justify-between gap-3 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 p-3 rounded-xl text-xs shadow-sm">
+          <button onclick="prevFlashcard()" class="px-3.5 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition flex items-center gap-1.5 font-medium"><i data-lucide="chevron-left" class="w-4 h-4"></i> Previous Card</button>
+          <span class="text-slate-500 dark:text-slate-400 font-mono text-xs">Click Card to Flip</span>
+          <button onclick="nextFlashcard()" class="px-3.5 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white transition flex items-center gap-1.5 font-semibold shadow">Next Card <i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+        </div>
+      </div>
+
+      <!-- VIEW 4: MINDMAPS -->
+      <div id="tab-content-mindmaps" class="tab-content hidden flex flex-col gap-4">
+        <div class="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-xl">
+          <div>
+            <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2"><i data-lucide="git-fork" class="w-4 h-4 text-brand-600 dark:text-brand-400"></i> Interactive Visual Concept Mindmaps</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Explore dynamic hierarchical node maps. Click nodes on canvas to inspect details.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="openAddMindmapNodeModal()" class="px-2.5 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs flex items-center gap-1 transition">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Node
+            </button>
+            <select id="mindmapSelector" onchange="renderMindmap()" class="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 text-slate-800 dark:text-slate-200 text-xs focus:outline-none focus:border-brand-500">
+              <option value="os">Operating Systems Kernel Architecture</option>
+              <option value="dbms">DBMS Storage & Indexing Engine</option>
+              <option value="cn">Computer Networks (TCP/IP Suite)</option>
+              <option value="dsa">Data Structures & Algorithms</option>
+              <option value="oop">System Design & OOP</option>
+            </select>
+          </div>
+        </div>
+        <div class="relative w-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-2xl p-2 min-h-[380px] flex flex-col">
+          <div class="flex items-center justify-between px-3 py-1.5 text-[11px] text-slate-500 border-b border-slate-200 dark:border-slate-900">
+            <span class="font-mono flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Interactive Dependency Graph</span>
+            <span>Click any node in graph below to inspect core theory</span>
+          </div>
+          <canvas id="mindmapCanvas" width="700" height="340" class="w-full h-[340px] cursor-pointer"></canvas>
+          <div id="mindmapInspector" class="p-3 bg-white dark:bg-slate-900/90 border-t border-slate-200 dark:border-slate-800 flex items-start justify-between gap-3 shadow-md">
+            <div>
+              <h5 id="inspectorTitle" class="text-xs font-bold text-brand-600 dark:text-brand-300 font-mono">Select a node</h5>
+              <p id="inspectorDesc" class="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Click any module bubble above to read concept notes & placement questions.</p>
+            </div>
+            <button onclick="askAIAssistantAboutNode()" class="text-[10px] px-2.5 py-1 rounded bg-brand-600 hover:bg-brand-500 text-white font-semibold transition shrink-0 flex items-center gap-1"><i data-lucide="sparkles" class="w-3 h-3"></i> Ask AI</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 5: TIMETABLE -->
+      <div id="tab-content-todo" class="tab-content hidden flex flex-col gap-4">
+        <div class="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-xl flex flex-col gap-5">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
+            <div>
+              <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2"><i data-lucide="calendar" class="w-4 h-4 text-brand-600 dark:text-brand-400"></i> Team 45-Minute Sprint Timetable (5 Members)</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Progress increases only when tasks are checked as completed.</p>
+            </div>
+            <button onclick="resetDefaultSprint()" class="text-xs px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 transition flex items-center gap-1.5"><i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Reset Schedule</button>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+            <div class="flex justify-between text-xs text-slate-500 dark:text-slate-400 mb-2"><span>Session Target Completion</span><span id="tabProgressLabel" class="text-emerald-600 dark:text-emerald-400 font-mono font-bold">0% Done</span></div>
+            <div class="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden"><div id="tabProgressBar" class="bg-emerald-500 h-full rounded-full transition-all duration-300" style="width: 0%"></div></div>
+          </div>
+          <div class="flex gap-2">
+            <input id="newSprintTime" type="text" placeholder="e.g. 15m" class="w-20 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-xs rounded-xl px-3 py-2.5 text-center text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand-500" />
+            <input id="newSprintTitle" type="text" placeholder="Add task & assign..." class="flex-1 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-xs rounded-xl px-4 py-2.5 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand-500" onkeydown="if(event.key === 'Enter') addSprintTask()" />
+            <button onclick="addSprintTask()" class="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold flex items-center gap-1.5 transition"><i data-lucide="plus" class="w-4 h-4"></i> Add</button>
+          </div>
+          <div id="tabSprintList" class="space-y-2.5"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT 4 COLS: TEAM CHAT -->
+    <section id="teamChatCol" class="lg:col-span-4 bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col gap-3 sticky top-28 transition-all duration-300">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2.5">
+        <div class="flex items-center gap-2">
+          <i data-lucide="messages-square" class="w-4 h-4 text-brand-600 dark:text-brand-400"></i>
+          <h2 class="font-bold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-200">Team Study Chat</h2>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span id="chatRoomOnlineBadge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-brand-500/10 text-brand-600 dark:text-brand-300 border border-brand-500/20">Solo Room</span>
+          <button onclick="toggleChatSidebar()" class="p-1 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Collapse chat and maximize code view"><i data-lucide="panel-right-close" class="w-4 h-4"></i></button>
+        </div>
+      </div>
+      <div id="teamChatFeed" class="space-y-2.5 overflow-y-auto max-h-[460px] min-h-[400px] pr-1 text-xs">
+        <div class="bg-slate-50 dark:bg-slate-950 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
+          <div class="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 mb-0.5"><span class="text-indigo-600 dark:text-indigo-400 font-semibold">Peer B</span><span>12:05 PM</span></div>
+          <p class="text-slate-700 dark:text-slate-300 leading-relaxed">Timetable progress only increases when tasks are checked complete!</p>
+        </div>
+      </div>
+      <div class="relative">
+        <input id="teamChatInput" type="text" placeholder="Type message to room..." class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-xs rounded-xl pl-3 pr-9 py-2.5 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand-500" onkeydown="if(event.key === 'Enter') sendTeamMessage()" />
+        <button onclick="sendTeamMessage()" class="absolute right-2 top-2.5 p-1 text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 transition"><i data-lucide="send" class="w-3.5 h-3.5"></i></button>
+      </div>
+    </section>
+  </main>
+
+  <!-- FLOATING RESTORE CHAT PILL -->
+  <div id="floatingRestoreChatPill" class="hidden fixed top-24 right-6 z-40">
+    <button onclick="toggleChatSidebar()" class="px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold shadow-2xl backdrop-blur flex items-center gap-2 transition transform hover:scale-105">
+      <i data-lucide="messages-square" class="w-4 h-4 text-brand-600 dark:text-brand-400"></i>
+      <span>Open Team Chat</span>
+      <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+    </button>
+  </div>
+
+  <!-- FLOATING SUN ORB AT BOTTOM-RIGHT -->
+  <div class="fixed bottom-6 right-6 z-50 flex items-center gap-3">
+    <span class="hidden sm:inline-block px-3 py-1.5 rounded-xl bg-white/90 dark:bg-slate-900/90 text-amber-700 dark:text-amber-300 text-xs font-semibold border border-amber-500/30 shadow-xl backdrop-blur">Ask Gemini AI ☀️</span>
+    <button id="sunOrbBtn" onclick="openGeminiModal()" class="w-16 h-16 rounded-full bg-gradient-to-tr from-amber-500 via-yellow-400 to-amber-200 flex items-center justify-center text-slate-950 shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95 sun-orb-anim cursor-pointer group" title="Click to open Gemini AI Assistant">
+      <i data-lucide="sun" class="w-8 h-8 text-amber-950 group-hover:rotate-45 transition-transform duration-500"></i>
+    </button>
+  </div>
+
+  <!-- AUTH MODAL -->
+  <div id="authModalOverlay" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-md rounded-2xl p-6 shadow-2xl flex flex-col gap-4 relative">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-lg bg-brand-600 flex items-center justify-center text-white"><i data-lucide="lock" class="w-4 h-4"></i></div>
+          <h3 id="authModalTitle" class="font-bold text-sm text-slate-900 dark:text-slate-100">Welcome to EduMate</h3>
+        </div>
+        <button onclick="closeAuthModal()" class="text-slate-400 hover:text-slate-800 dark:hover:text-white transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="grid grid-cols-2 gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-medium">
+        <button id="authTabLogin" onclick="setAuthTab('login')" class="py-1.5 rounded-lg bg-brand-600 text-white font-semibold transition">Log In</button>
+        <button id="authTabSignup" onclick="setAuthTab('signup')" class="py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">Sign Up</button>
+      </div>
+      <div id="authErrorBox" class="hidden p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-300 text-xs flex items-center gap-2">
+        <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i><span id="authErrorMsg">Error message</span>
+      </div>
+      <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-3">
+        <div id="fieldFullName" class="hidden space-y-1">
+          <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Full Name</label>
+          <div class="relative"><i data-lucide="user" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i><input id="authNameInput" type="text" placeholder="e.g. Biswa Swain" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 font-sans" /></div>
+        </div>
+        <div class="space-y-1">
+          <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Email Address</label>
+          <div class="relative"><i data-lucide="mail" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i><input id="authEmailInput" type="email" required placeholder="name@university.edu" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 font-mono" /></div>
+        </div>
+        <div class="space-y-1">
+          <div class="flex justify-between items-center"><label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Password</label><span class="text-[10px] text-slate-500">Min. 6 chars</span></div>
+          <div class="relative"><i data-lucide="key" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i><input id="authPasswordInput" type="password" required minlength="6" placeholder="••••••••" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 font-mono" /></div>
+        </div>
+        <button id="authSubmitBtn" type="submit" class="w-full py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold tracking-wide transition shadow-lg shadow-brand-600/30 flex items-center justify-center gap-2 mt-4"><i data-lucide="log-in" class="w-3.5 h-3.5"></i><span>Log In</span></button>
+      </form>
+    </div>
+  </div>
+
+  <!-- CREATE SESSION MODAL -->
+  <div id="createSessionModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-sm rounded-2xl p-6 shadow-2xl flex flex-col gap-4">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+        <h3 class="font-bold text-sm text-slate-900 dark:text-slate-100">Create Peer Session</h3>
+        <button onclick="document.getElementById('createSessionModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <p class="text-xs text-slate-500 dark:text-slate-400">Generate a unique team session code to share with anyone accessing the website.</p>
+      <div class="bg-slate-100 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-center font-mono text-base font-bold text-brand-600 dark:text-brand-400" id="generatedCodeDisplay">
+        EDUMATE-XXXX
+      </div>
+      <div class="flex gap-2">
+        <button onclick="document.getElementById('createSessionModal').classList.add('hidden')" class="flex-1 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">Close</button>
+        <button onclick="confirmCreateSession()" class="flex-1 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-xs font-semibold text-white">Start Room</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JOIN SESSION MODAL -->
+  <div id="joinSessionModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-sm rounded-2xl p-6 shadow-2xl flex flex-col gap-4">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+        <h3 class="font-bold text-sm text-slate-900 dark:text-slate-100">Join Peer Session</h3>
+        <button onclick="document.getElementById('joinSessionModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <p class="text-xs text-slate-500 dark:text-slate-400">Enter the team code shared by your peer to connect to their session room.</p>
+      <input id="joinCodeInput" type="text" placeholder="e.g. EDUMATE-4821" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 uppercase" />
+      <div class="flex gap-2">
+        <button onclick="document.getElementById('joinSessionModal').classList.add('hidden')" class="flex-1 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">Cancel</button>
+        <button onclick="confirmJoinSession()" class="flex-1 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-xs font-semibold text-white">Join Room</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD QUESTION MODAL -->
+  <div id="addQuestionModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-md rounded-2xl p-6 shadow-2xl flex flex-col gap-4">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+        <h3 class="font-bold text-sm text-slate-900 dark:text-slate-100">Add New Coding Problem</h3>
+        <button onclick="document.getElementById('addQuestionModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Title</label>
+          <input id="newQTitle" type="text" placeholder="Problem title" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand-500" />
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Category</label>
+            <input id="newQCat" type="text" placeholder="e.g. Dynamic Programming" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand-500" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Difficulty</label>
+            <select id="newQDiff" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand-500">
+              <option value="Easy">Easy</option>
+              <option value="Medium">Medium</option>
+              <option value="Hard">Hard</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Description</label>
+          <textarea id="newQDesc" rows="3" placeholder="Problem specifications and constraints..." class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand-500"></textarea>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="document.getElementById('addQuestionModal').classList.add('hidden')" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">Cancel</button>
+        <button onclick="submitNewQuestion()" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-xs font-semibold text-white">Save Question</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD FLASHCARD MODAL -->
+  <div id="addFlashcardModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-md rounded-2xl p-6 shadow-2xl flex flex-col gap-4">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+        <h3 class="font-bold text-sm text-slate-900 dark:text-slate-100">Add Technical Flashcard</h3>
+        <button onclick="document.getElementById('addFlashcardModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Category</label>
+          <input id="newFCCat" type="text" placeholder="e.g. Operating Systems" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand-500" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Question / Scenario</label>
+          <input id="newFCQ" type="text" placeholder="e.g. What is process thrashing?" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand-500" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Optimal Answer</label>
+          <textarea id="newFCA" rows="3" placeholder="Technical answer details..." class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand-500"></textarea>
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Key Takeaway</label>
+          <input id="newFCKey" type="text" placeholder="High-yield viva summary point" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand-500" />
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="document.getElementById('addFlashcardModal').classList.add('hidden')" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">Cancel</button>
+        <button onclick="submitNewFlashcard()" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-xs font-semibold text-white">Save Flashcard</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD MINDMAP NODE MODAL -->
+  <div id="addMindmapModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-md rounded-2xl p-6 shadow-2xl flex flex-col gap-4">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+        <h3 class="font-bold text-sm text-slate-900 dark:text-slate-100">Add Concept Node</h3>
+        <button onclick="document.getElementById('addMindmapModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Chapter</label>
+          <select id="newMMChapter" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand-500">
+            <option value="os">Operating Systems</option>
+            <option value="dbms">DBMS</option>
+            <option value="cn">Computer Networks</option>
+            <option value="dsa">Data Structures & Algorithms</option>
+            <option value="oop">System Design & OOP</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Node Title</label>
+          <input id="newMMTitle" type="text" placeholder="e.g. Virtual Memory" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand-500" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Concept Summary & Details</label>
+          <textarea id="newMMDesc" rows="3" placeholder="Explain the module key takeaways..." class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand-500"></textarea>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="document.getElementById('addMindmapModal').classList.add('hidden')" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">Cancel</button>
+        <button onclick="submitNewMindmapNode()" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-xs font-semibold text-white">Attach Node</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GEMINI FLASH AI MODAL -->
+  <div id="geminiModalOverlay" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-end sm:items-center justify-end sm:justify-center p-0 sm:p-4 transition-all">
+    <div class="bg-white dark:bg-slate-900 border border-amber-500/30 w-full sm:max-w-xl rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl flex flex-col gap-3.5 max-h-[85vh] sm:max-h-[80vh] overflow-hidden">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center shadow-lg shadow-amber-500/25"><i data-lucide="sun" class="w-4 h-4 text-amber-950"></i></div>
+          <div>
+            <h3 class="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-1.5">Gemini Assistant <span class="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">AI Flash</span></h3>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">Powered by Google Gemini Generative API</p>
+          </div>
+        </div>
+        <button onclick="closeGeminiModal()" class="text-slate-400 hover:text-slate-900 dark:hover:text-white p-1 rounded-lg bg-slate-100 dark:bg-slate-800/80 transition"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-50 dark:bg-slate-950 p-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
+        <div class="flex items-center gap-1">
+          <button id="modalModeChat" onclick="setModalAIMode('chat')" class="px-2.5 py-1 rounded-md text-[11px] font-medium bg-brand-600 text-white transition">💬 Text Chat</button>
+          <button id="modalModeVoice" onclick="setModalAIMode('voice')" class="px-2.5 py-1 rounded-md text-[11px] font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">🎙️ Voice Mode</button>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <input id="geminiModalKey" type="password" placeholder="Gemini API Key" class="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-[11px] rounded-lg px-2 py-1 w-36 text-slate-800 dark:text-slate-200 outline-none focus:border-brand-500 font-mono" />
+          <button onclick="submitGeminiKey()" class="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] transition shadow">Submit Key</button>
+        </div>
+      </div>
+      <div id="modalAudioBanner" class="hidden p-2 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center justify-between text-xs text-amber-700 dark:text-amber-300">
+        <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span> Speaking voice response aloud...</span>
+        <button onclick="stopModalAIVoice()" class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-600 dark:text-rose-300 text-[10px] font-semibold border border-rose-500/30 hover:bg-rose-500/30 flex items-center gap-1"><i data-lucide="square" class="w-3 h-3"></i> Stop Speech</button>
+      </div>
+      <div id="modalAIFeed" class="flex-1 space-y-3 overflow-y-auto max-h-[360px] min-h-[260px] pr-1 text-xs">
+        <div class="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800/90">
+          <div class="flex items-center justify-between text-[10px] text-amber-600 dark:text-amber-400 mb-1 font-semibold"><span>Gemini AI</span><span>Ready</span></div>
+          <p class="text-slate-700 dark:text-slate-200 leading-relaxed">Hello! Paste your API key, click <strong>Submit Key</strong>, and ask Gemini anything!</p>
+        </div>
+      </div>
+      <div class="relative flex items-center gap-2 pt-1">
+        <div class="relative shrink-0 flex items-center justify-center">
+          <div id="modalVoiceBlob" class="hidden absolute w-10 h-10 rounded-full bg-rose-500/30 mic-live-pulse"></div>
+          <button id="modalMicBtn" onclick="toggleModalMicRecording()" class="relative z-10 w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-950 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center transition" title="Speak query into microphone"><i id="modalMicIcon" data-lucide="mic" class="w-4 h-4 text-amber-500"></i></button>
+        </div>
+        <div class="relative flex-1">
+          <input id="modalAIInput" type="text" placeholder="Ask Gemini any question or code doubt..." class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 text-xs rounded-xl pl-3 pr-9 py-2.5 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-amber-500" onkeydown="if(event.key === 'Enter') sendModalAIMessage()" />
+          <button id="modalAISendBtn" onclick="sendModalAIMessage()" class="absolute right-2 top-2.5 p-1 text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 transition"><i data-lucide="send" class="w-3.5 h-3.5"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SOLUTION MODAL -->
+  <div id="solutionModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-2xl rounded-2xl p-6 shadow-2xl flex flex-col gap-4">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-500"></i>
+          <h3 id="solutionModalTitle" class="font-bold text-sm text-slate-900 dark:text-slate-100">Optimal Reference Solution</h3>
+        </div>
+        <button onclick="closeSolutionModal()" class="text-slate-400 hover:text-slate-900 dark:hover:text-white transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800 overflow-x-auto text-xs">
+        <button onclick="switchSolutionTab('python')" id="solTab-python" class="px-2.5 py-1 rounded-lg font-semibold bg-brand-600 text-white transition">Python</button>
+        <button onclick="switchSolutionTab('cpp')" id="solTab-cpp" class="px-2.5 py-1 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">C++</button>
+        <button onclick="switchSolutionTab('java')" id="solTab-java" class="px-2.5 py-1 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">Java</button>
+        <button onclick="switchSolutionTab('javascript')" id="solTab-javascript" class="px-2.5 py-1 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">JavaScript</button>
+        <button onclick="switchSolutionTab('csharp')" id="solTab-csharp" class="px-2.5 py-1 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">C#</button>
+      </div>
+      <div class="relative"><pre id="solutionCodeBlock" class="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800 font-mono text-xs text-brand-600 dark:text-brand-300 overflow-x-auto leading-relaxed max-h-72"></pre></div>
+      <div class="flex justify-end gap-3 pt-2">
+        <button onclick="closeSolutionModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition">Close</button>
+        <button onclick="loadSolutionToEditor()" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold transition flex items-center gap-1.5"><i data-lucide="copy" class="w-3.5 h-3.5"></i> Load Into Editor</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 1. LIGHT / DARK MODE TOGGLE CONTROLLER
+    function toggleThemeMode() {
+      const htmlEl = document.documentElement;
+      const isDark = htmlEl.classList.contains('dark');
+      if (isDark) {
+        htmlEl.classList.remove('dark');
+        localStorage.setItem('edumate_theme', 'light');
+        document.getElementById('themeIcon').setAttribute('data-lucide', 'moon');
+      } else {
+        htmlEl.classList.add('dark');
+        localStorage.setItem('edumate_theme', 'dark');
+        document.getElementById('themeIcon').setAttribute('data-lucide', 'sun');
+      }
+      lucide.createIcons();
+      if (typeof renderMindmap === 'function') renderMindmap();
+      if (typeof updateTrackerUI === 'function') updateTrackerUI();
+    }
+    function initThemeMode() {
+      const savedTheme = localStorage.getItem('edumate_theme');
+      const htmlEl = document.documentElement;
+      if (savedTheme === 'light') {
+        htmlEl.classList.remove('dark');
+        document.getElementById('themeIcon').setAttribute('data-lucide', 'moon');
+      } else {
+        htmlEl.classList.add('dark');
+        document.getElementById('themeIcon').setAttribute('data-lucide', 'sun');
+      }
+      lucide.createIcons();
+    }
+
+    // 2. DAILY STREAK & SESSION TEAM CODE SHARING
+    function initStreakSystem() {
+      const todayStr = new Date().toDateString();
+      const lastLogin = localStorage.getItem('edumate_last_login_date');
+      let streakCount = parseInt(localStorage.getItem('edumate_streak_count') || '1', 10);
+      if (!lastLogin) {
+        localStorage.setItem('edumate_last_login_date', todayStr);
+        localStorage.setItem('edumate_streak_count', '1');
+        streakCount = 1;
+      } else if (lastLogin !== todayStr) {
+        const lastDate = new Date(lastLogin);
+        const currDate = new Date(todayStr);
+        const diffTime = Math.abs(currDate - lastDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays === 1) streakCount += 1;
+        else if (diffDays > 1) streakCount = 1;
+        localStorage.setItem('edumate_last_login_date', todayStr);
+        localStorage.setItem('edumate_streak_count', streakCount.toString());
+      }
+      document.getElementById('streakCountDisplay').textContent = `${streakCount} Day${streakCount > 1 ? 's' : ''} Streak`;
+    }
+    function openCreateSessionModal() {
+      const randomCode = 'EDUMATE-' + Math.floor(1000 + Math.random() * 9000);
+      document.getElementById('generatedCodeDisplay').textContent = randomCode;
+      document.getElementById('createSessionModal').classList.remove('hidden');
+    }
+    function confirmCreateSession() {
+      const code = document.getElementById('generatedCodeDisplay').textContent;
+      localStorage.setItem('edumate_active_room', code);
+      document.getElementById('activeTeamBadge').textContent = `Room: ${code}`;
+      document.getElementById('chatRoomOnlineBadge').textContent = `Room: ${code}`;
+      document.getElementById('createSessionModal').classList.add('hidden');
+      alert(`Session room ${code} created successfully! Share this team code.`);
+    }
+    function openJoinSessionModal() {
+      document.getElementById('joinCodeInput').value = '';
+      document.getElementById('joinSessionModal').classList.remove('hidden');
+    }
+    function confirmJoinSession() {
+      const code = document.getElementById('joinCodeInput').value.trim().toUpperCase();
+      if (!code) { alert("Please enter a valid team code."); return; }
+      localStorage.setItem('edumate_active_room', code);
+      document.getElementById('activeTeamBadge').textContent = `Room: ${code}`;
+      document.getElementById('chatRoomOnlineBadge').textContent = `Room: ${code}`;
+      document.getElementById('joinSessionModal').classList.add('hidden');
+      alert(`Successfully joined session room ${code}!`);
+    }
+
+    // Sidebar Collapse
+    let isChatSidebarCollapsed = false;
+    function toggleChatSidebar() {
+      isChatSidebarCollapsed = !isChatSidebarCollapsed;
+      const mainCol = document.getElementById('mainWorkspaceCol');
+      const chatCol = document.getElementById('teamChatCol');
+      const restorePill = document.getElementById('floatingRestoreChatPill');
+      if (isChatSidebarCollapsed) {
+        chatCol.classList.add('hidden');
+        mainCol.classList.replace('lg:col-span-8', 'lg:col-span-12');
+        restorePill.classList.remove('hidden');
+      } else {
+        chatCol.classList.remove('hidden');
+        mainCol.classList.replace('lg:col-span-12', 'lg:col-span-8');
+        restorePill.classList.add('hidden');
+      }
+      setTimeout(() => { if (typeof renderMindmap === 'function') renderMindmap(); }, 350);
+      lucide.createIcons();
+    }
+
+    // User Authentication
+    let authCurrentMode = 'login';
+    let currentUser = null;
+    function openAuthModal(mode = 'login') {
+      setAuthTab(mode);
+      document.getElementById('authErrorBox').classList.add('hidden');
+      document.getElementById('authModalOverlay').classList.remove('hidden');
+    }
+    function closeAuthModal() { document.getElementById('authModalOverlay').classList.add('hidden'); }
+    function setAuthTab(mode) {
+      authCurrentMode = mode;
+      const isLogin = mode === 'login';
+      document.getElementById('authModalTitle').textContent = isLogin ? "Welcome Back — Log In" : "Create an Account — Sign Up";
+      document.getElementById('fieldFullName').classList.toggle('hidden', isLogin);
+      document.getElementById('authNameInput').required = !isLogin;
+      document.getElementById('authSubmitBtn').innerHTML = isLogin ? `<i data-lucide="log-in" class="w-3.5 h-3.5"></i><span>Log In</span>` : `<i data-lucide="user-plus" class="w-3.5 h-3.5"></i><span>Create Account</span>`;
+      lucide.createIcons();
+    }
+    function handleAuthSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById('authEmailInput').value.trim().toLowerCase();
+      const password = document.getElementById('authPasswordInput').value;
+      let users = JSON.parse(localStorage.getItem('edumate_users') || "[]");
+      if (authCurrentMode === 'signup') {
+        const name = document.getElementById('authNameInput').value.trim();
+        if (!name) { showAuthError("Please enter your name."); return; }
+        if (users.find(u => u.email === email)) { showAuthError("Account already exists."); return; }
+        const newUser = { name, email, password };
+        users.push(newUser);
+        localStorage.setItem('edumate_users', JSON.stringify(users));
+        setCurrentUser(newUser);
+        closeAuthModal();
+      } else {
+        const found = users.find(u => u.email === email && u.password === password);
+        if (!found) { showAuthError("Invalid email or password."); return; }
+        setCurrentUser(found);
+        closeAuthModal();
+      }
+    }
+    function showAuthError(msg) {
+      document.getElementById('authErrorMsg').textContent = msg;
+      document.getElementById('authErrorBox').classList.remove('hidden');
+    }
+    function setCurrentUser(user) {
+      currentUser = user;
+      localStorage.setItem('edumate_active_session', JSON.stringify(user));
+      updateAuthUI();
+    }
+    function logoutUser() {
+      if (confirm("Log out of EduMate session?")) {
+        currentUser = null;
+        localStorage.removeItem('edumate_active_session');
+        updateAuthUI();
+      }
+    }
+    function updateAuthUI() {
+      const navUser = document.getElementById('navUserName');
+      if (currentUser) {
+        document.getElementById('authLoggedOut').classList.add('hidden');
+        document.getElementById('authLoggedIn').classList.remove('hidden');
+        document.getElementById('userProfileName').textContent = currentUser.name;
+        document.getElementById('userProfileEmail').textContent = currentUser.email;
+        document.getElementById('userAvatarChar').textContent = currentUser.name.charAt(0).toUpperCase();
+        if (navUser) navUser.textContent = `${currentUser.name} (Host)`;
+      } else {
+        document.getElementById('authLoggedOut').classList.remove('hidden');
+        document.getElementById('authLoggedIn').classList.add('hidden');
+        if (navUser) navUser.textContent = "Host (You)";
+      }
+      lucide.createIcons();
+    }
+    function checkActiveSession() {
+      const session = localStorage.getItem('edumate_active_session');
+      if (session) { try { currentUser = JSON.parse(session); } catch (e) { currentUser = null; } }
+      updateAuthUI();
+    }
+
+    // DSA Studio Engine
+    let currentSelectedLanguage = "python";
+    const languageTemplates = {
+      python: { name: "Python 3", getStarter: (fn) => `def ${fn}(nums: list[int], target: int) -> list[int]:\n    # TODO: Write your code here\n    pass` },
+      cpp: { name: "C++ (C++20)", getStarter: (fn) => `#include <vector>\nusing namespace std;\nclass Solution {\npublic:\n    vector<int> ${fn}(vector<int>& nums, int target) {\n        return {};\n    }\n};` },
+      java: { name: "Java 17", getStarter: (fn) => `class Solution {\n    public int[] ${fn}(int[] nums, int target) {\n        return new int[]{};\n    }\n}` },
+      javascript: { name: "JavaScript", getStarter: (fn) => `var ${fn} = function(nums, target) {\n    return [];\n};` },
+      csharp: { name: "C#", getStarter: (fn) => `public class Solution {\n    public int[] ${fn}(int[] nums, int target) {\n        return new int[0];\n    }\n}` }
+    };
+    const dsaDatabase = [
+      { id: 1, title: "Two Sum", category: "Arrays & Hashing", difficulty: "Easy", desc: "Given array nums and integer target, return indices of two numbers adding to target.", example: "nums = [2,7,11,15], target = 9 -> [0,1]", fnName: "twoSum", solutions: { python: "def twoSum(nums, target):\n    seen = {}\n    for i, n in enumerate(nums):\n        if target - n in seen: return [seen[target - n], i]\n        seen[n] = i\n    return []" }, validationCheck: (c) => c.includes("seen") || c.includes("map") || c.length > 20 }
+    ];
+    while (dsaDatabase.length < 100) {
+      const id = dsaDatabase.length + 1;
+      const diff = id % 3 === 0 ? "Hard" : (id % 2 === 0 ? "Medium" : "Easy");
+      const cat = id % 4 === 0 ? "Dynamic Programming" : (id % 3 === 0 ? "Trees" : "Arrays & Hashing");
+      dsaDatabase.push({ id, title: `Problem ${id}: Algorithm Optimization`, category: cat, difficulty: diff, desc: `Solve technical problem #${id} with optimal constraints.`, example: `Input -> Output`, fnName: `solve${id}`, solutions: { python: `def solve${id}(nums):\n    return len(nums)` }, validationCheck: (c) => c.length > 15 && !c.includes("pass") });
+    }
+    function openAddQuestionModal() { document.getElementById('addQuestionModal').classList.remove('hidden'); }
+    function submitNewQuestion() {
+      const title = document.getElementById('newQTitle').value.trim();
+      const cat = document.getElementById('newQCat').value.trim() || "General";
+      const diff = document.getElementById('newQDiff').value;
+      const desc = document.getElementById('newQDesc').value.trim() || "Custom problem statement.";
+      if (!title) { alert("Please provide a question title."); return; }
+      const newId = dsaDatabase.length + 1;
+      const fnName = "solveCustom" + newId;
+      dsaDatabase.push({
+        id: newId, title, category: cat, difficulty: diff, desc, example: "Input -> Output", fnName,
+        solutions: { python: `def ${fnName}(nums):\n    return nums` },
+        validationCheck: (c) => c.length > 10
+      });
+      document.getElementById('addQuestionModal').classList.add('hidden');
+      initSelector();
+      loadProblem(dsaDatabase.length - 1);
+      alert(`Problem "${title}" added successfully!`);
+    }
+
+    // Flashcard System
+    const flashcardDeck = [
+      { id: 1, category: "Operating Systems", question: "Explain the 4 Coffman conditions for a Deadlock.", answer: "1. Mutual Exclusion\n2. Hold and Wait\n3. No Preemption\n4. Circular Wait.\n\nPrevention: Total ordering on resource IDs.", key: "Total ordering on resource IDs." },
+      { id: 2, category: "DBMS", question: "Why do databases use B+ Trees instead of Hash Indexing?", answer: "Hash tables offer O(1) point lookups but fail on range scans (WHERE age BETWEEN 20 AND 30). B+ Trees keep low height and link leaves for sequential scans.", key: "High fan-out minimizes disk block reads; linked leaves enable range queries." },
+      { id: 3, category: "Computer Networks", question: "Explain the TCP 3-Way Handshake and SYN Flood attack.", answer: "1. SYN -> 2. SYN-ACK -> 3. ACK.\nSYN Flood fills half-open connection table. Defense: SYN Cookies.", key: "SYN Cookies prevent connection backlog exhaustion." },
+      { id: 4, category: "System Design & OOP", question: "How do you implement an LRU Cache with O(1) Get and Put?", answer: "Combine a Hash Map with a Doubly Linked List. Map gives O(1) lookup; Linked List maintains recency ordering.", key: "Hash Map for O(1) lookup + Doubly Linked List for O(1) order." }
+    ];
+    function openAddFlashcardModal() { document.getElementById('addFlashcardModal').classList.remove('hidden'); }
+    function submitNewFlashcard() {
+      const category = document.getElementById('newFCCat').value.trim() || "General";
+      const question = document.getElementById('newFCQ').value.trim();
+      const answer = document.getElementById('newFCA').value.trim();
+      const key = document.getElementById('newFCKey').value.trim() || "Core principle";
+      if (!question || !answer) { alert("Please provide question and answer."); return; }
+      flashcardDeck.push({ id: flashcardDeck.length + 1, category, question, answer, key });
+      document.getElementById('addFlashcardModal').classList.add('hidden');
+      filteredDeck = [...flashcardDeck];
+      currentFCIndex = filteredDeck.length - 1;
+      renderFlashcard();
+      alert("Flashcard added successfully!");
+    }
+
+    // Mindmap System
+    const mindmapData = {
+      os: {
+        title: "Operating Systems Kernel Architecture",
+        nodes: [
+          { id: "r", label: "OS Kernel", x: 350, y: 40, color: "#6366f1", desc: "Core software managing CPU, memory, and devices." },
+          { id: "p", label: "Process & Threads", x: 150, y: 130, color: "#818cf8", desc: "PCB, Context Switching, Schedulers." },
+          { id: "m", label: "Memory Mgmt", x: 350, y: 130, color: "#818cf8", desc: "Virtual Memory, Paging, TLB." }
+        ],
+        edges: [["r", "p"], ["r", "m"]]
+      },
+      dbms: {
+        title: "DBMS Storage & Query Engine",
+        nodes: [
+          { id: "r", label: "Database Engine", x: 350, y: 40, color: "#10b981", desc: "Storage Manager, Execution Engine." },
+          { id: "st", label: "Storage & Indexing", x: 200, y: 130, color: "#34d399", desc: "B+ Trees, Buffer Pool." }
+        ],
+        edges: [["r", "st"]]
+      },
+      cn: {
+        title: "Computer Networks (TCP/IP Suite)",
+        nodes: [
+          { id: "r", label: "TCP/IP Stack", x: 350, y: 40, color: "#f59e0b", desc: "4-layer network stack." },
+          { id: "app", label: "Application Layer", x: 200, y: 130, color: "#fbbf24", desc: "HTTP/3, DNS, TLS 1.3." }
+        ],
+        edges: [["r", "app"]]
+      },
+      dsa: {
+        title: "Data Structures & Algorithms",
+        nodes: [
+          { id: "r", label: "DSA Master Track", x: 350, y: 40, color: "#ec4899", desc: "Core coding interview patterns." },
+          { id: "lin", label: "Linear Structures", x: 200, y: 130, color: "#f472b6", desc: "Arrays, Linked Lists, Stacks, Queues." }
+        ],
+        edges: [["r", "lin"]]
+      },
+      oop: {
+        title: "System Design & OOP",
+        nodes: [
+          { id: "r", label: "Architecture & OOP", x: 350, y: 40, color: "#8b5cf6", desc: "Scalable backend design principles." },
+          { id: "oop", label: "OOP Pillars", x: 200, y: 130, color: "#a78bfa", desc: "Encapsulation, Inheritance, Polymorphism." }
+        ],
+        edges: [["r", "oop"]]
+      }
+    };
+    function openAddMindmapNodeModal() { document.getElementById('addMindmapModal').classList.remove('hidden'); }
+    function submitNewMindmapNode() {
+      const chKey = document.getElementById('newMMChapter').value;
+      const label = document.getElementById('newMMTitle').value.trim();
+      const desc = document.getElementById('newMMDesc').value.trim() || "Custom module notes.";
+      if (!label) { alert("Please enter a node title."); return; }
+      const map = mindmapData[chKey];
+      const newId = "node_" + Date.now();
+      map.nodes.push({ id: newId, label, x: 200 + Math.random() * 300, y: 220, color: "#06b6d4", desc });
+      map.edges.push([map.nodes[0].id, newId]);
+      document.getElementById('addMindmapModal').classList.add('hidden');
+      document.getElementById('mindmapSelector').value = chKey;
+      renderMindmap();
+      alert(`Mindmap node "${label}" added successfully!`);
+    }
+
+    // Timetable Tasks
+    let sprintTasks = [
+      { id: 1, time: "10m", title: "Review Two Sum optimal pattern", assigned: "Host", done: false },
+      { id: 2, time: "15m", title: "OS Deadlock prevention viva review", assigned: "Peer B", done: false },
+      { id: 3, time: "10m", title: "DBMS B+ Tree indexing mechanics", assigned: "Peer C", done: false },
+      { id: 4, time: "10m", title: "TCP 3-way handshake analysis", assigned: "Peer D", done: false }
+    ];
+    function renderSprintList() {
+      const container = document.getElementById('tabSprintList');
+      if (!container) return;
+      container.innerHTML = '';
+      let completedCount = 0;
+      sprintTasks.forEach(task => {
+        if (task.done) completedCount++;
+        const item = document.createElement('div');
+        item.className = "flex items-center justify-between bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-xs";
+        item.innerHTML = `
+          <div class="flex items-center gap-3">
+            <input type="checkbox" ${task.done ? 'checked' : ''} onchange="toggleSprintTask(${task.id})" class="w-4 h-4 accent-brand-600 rounded cursor-pointer" />
+            <span class="${task.done ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-slate-200'} font-medium">${task.title}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded bg-brand-500/10 text-brand-600 dark:text-brand-400 font-mono text-[10px]">${task.time}</span>
+            <span class="text-slate-500 dark:text-slate-400 text-[10px] font-mono">@${task.assigned}</span>
+            <button onclick="deleteSprintTask(${task.id})" class="text-slate-400 hover:text-rose-500 ml-1"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+      const total = sprintTasks.length;
+      const pct = total === 0 ? 0 : Math.round((completedCount / total) * 100);
+      document.getElementById('tabProgressLabel').textContent = `${pct}% Done`;
+      document.getElementById('tabProgressBar').style.width = `${pct}%`;
+      lucide.createIcons();
+    }
+    function toggleSprintTask(id) {
+      const task = sprintTasks.find(t => t.id === id);
+      if (task) {
+        task.done = !task.done;
+        renderSprintList();
+      }
+    }
+    function addSprintTask() {
+      const timeInput = document.getElementById('newSprintTime');
+      const titleInput = document.getElementById('newSprintTitle');
+      const time = timeInput.value.trim() || "10m";
+      const title = titleInput.value.trim();
+      if (!title) { alert("Please enter task description."); return; }
+      sprintTasks.push({ id: Date.now(), time, title, assigned: currentUser ? currentUser.name : "Host", done: false });
+      timeInput.value = '';
+      titleInput.value = '';
+      renderSprintList();
+    }
+    function deleteSprintTask(id) {
+      sprintTasks = sprintTasks.filter(t => t.id !== id);
+      renderSprintList();
+    }
+    function resetDefaultSprint() {
+      sprintTasks.forEach(t => t.done = false);
+      renderSprintList();
+      alert("Shared timetable schedule has been successfully reset to 0%!");
+    }
+
+    // Editor & Language Functions
+    function onLanguageChange() {
+      currentSelectedLanguage = document.getElementById('editorLangSelector').value;
+      const prob = dsaDatabase[currentIndex];
+      document.getElementById('dsaEditor').value = languageTemplates[currentSelectedLanguage].getStarter(prob.fnName);
+    }
+    let currentSolutionLanguage = "python";
+    function switchSolutionTab(lang) {
+      currentSolutionLanguage = lang;
+      const prob = dsaDatabase[currentIndex];
+      ['python', 'cpp', 'java', 'javascript', 'csharp'].forEach(l => {
+        document.getElementById(`solTab-${l}`).className = l === lang ? "px-2.5 py-1 rounded-lg font-semibold bg-brand-600 text-white transition" : "px-2.5 py-1 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition";
+      });
+      document.getElementById('solutionCodeBlock').textContent = prob.solutions[lang] || prob.solutions.python || "solution = 'Available soon'";
+    }
+    function loadSolutionToEditor() {
+      const prob = dsaDatabase[currentIndex];
+      document.getElementById('editorLangSelector').value = currentSolutionLanguage;
+      currentSelectedLanguage = currentSolutionLanguage;
+      document.getElementById('dsaEditor').value = prob.solutions[currentSolutionLanguage] || prob.solutions.python;
+      closeSolutionModal();
+    }
+
+    // Tab Switching
+    function switchMainTab(tab) {
+      ['dsa', 'flashcards', 'mindmaps', 'todo', 'tracker'].forEach(t => {
+        const el = document.getElementById(`tab-content-${t}`);
+        const btn = document.getElementById(`tab-btn-${t}`);
+        if (el) el.classList.toggle('hidden', t !== tab);
+        if (btn) btn.className = t === tab ? "tab-btn flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-brand-600 text-white shadow-md shadow-brand-600/30 transition shrink-0" : "tab-btn flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800 transition shrink-0";
+      });
+      if (tab === 'tracker') {
+        setTimeout(renderProgressTrackerCharts, 50);
+        renderIndividualChaptersList();
+      }
+      if (tab === 'mindmaps') setTimeout(renderMindmap, 50);
+      if (tab === 'todo') renderSprintList();
+    }
+
+    // Problem Selectors
+    let currentIndex = 0;
+    function initSelector() {
+      const sel = document.getElementById('dsaProblemSelector');
+      sel.innerHTML = '';
+      dsaDatabase.forEach((prob, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx; opt.textContent = `${idx + 1}. [${prob.category}] ${prob.title} (${prob.difficulty})`;
+        sel.appendChild(opt);
+      });
+      loadProblem(0);
+    }
+    function loadProblem(index) {
+      currentIndex = index;
+      const prob = dsaDatabase[index];
+      document.getElementById('dsaProblemSelector').value = index;
+      document.getElementById('dsaCounter').textContent = `${index + 1} /${dsaDatabase.length}`;
+      
+      const badgeColor = prob.difficulty === 'Easy' 
+        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' 
+        : (prob.difficulty === 'Medium' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20');
+      document.getElementById('dsaProblemCard').innerHTML = `
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded border font-mono ${badgeColor}">${prob.difficulty}</span>
+          <span class="text-[10px] uppercase font-mono px-2.5 py-0.5 rounded bg-brand-500/10 text-brand-600 dark:text-brand-300 border border-brand-500/20">${prob.category}</span>
+        </div>
+        <h3 class='font-bold text-sm text-slate-900 dark:text-slate-100 mb-1'>${index + 1}.${prob.title}</h3>
+        <p class='text-slate-600 dark:text-slate-300 mb-2'>${prob.desc}</p>
+        <div class='p-2 bg-slate-100 dark:bg-slate-950 rounded font-mono text-[11px] text-slate-600 dark:text-slate-400'>${prob.example}</div>
+      `;
+      document.getElementById('dsaEditor').value = languageTemplates[currentSelectedLanguage].getStarter(prob.fnName);
+    }
+    function onSelectChange() { loadProblem(parseInt(document.getElementById('dsaProblemSelector').value, 10)); }
+    function nextProblem() { loadProblem((currentIndex + 1) % dsaDatabase.length); }
+    function prevProblem() { loadProblem((currentIndex - 1 + dsaDatabase.length) % dsaDatabase.length); }
+
+    // Code Verification
+    function runVerification() {
+      const prob = dsaDatabase[currentIndex];
+      const userCode = document.getElementById('dsaEditor').value.trim();
+      const status = document.getElementById('dsaRunStatus');
+      status.innerHTML = `<span class="text-amber-500 font-medium animate-pulse">Running test suite against ${languageTemplates[currentSelectedLanguage].name}...</span>`;
+      setTimeout(() => {
+        const isValid = prob.validationCheck(userCode);
+        if (isValid) {
+          status.innerHTML = `<span class="text-emerald-600 dark:text-emerald-400 font-bold">✓ Passed! All Test Cases Correct</span>`;
+          incrementSolvedCount();
+        } else {
+          status.innerHTML = `<span class="text-rose-600 dark:text-rose-400 font-bold">✗ Incorrect: Logic incomplete or syntax error. Try again!</span>`;
+        }
+      }, 400);
+    }
+    function openSolutionModal() {
+      const prob = dsaDatabase[currentIndex];
+      document.getElementById('solutionModalTitle').textContent = `Reference Solution — ${prob.title}`;
+      switchSolutionTab('python');
+      document.getElementById('solutionModal').classList.remove('hidden');
+    }
+    function closeSolutionModal() { document.getElementById('solutionModal').classList.add('hidden'); }
+
+    // Progress Tracker
+    let userStats = { solved: 0, easy: 0, medium: 0, hard: 0, os: 0, dbms: 0, cn: 0 };
+    const chaptersData = [
+      { name: "Arrays & Hashing (DSA)", solved: 0, total: 15, color: "bg-sky-400" },
+      { name: "Two Pointers & Sliding Window", solved: 0, total: 15, color: "bg-indigo-400" },
+      { name: "Trees & Binary Search Trees", solved: 0, total: 20, color: "bg-violet-400" },
+      { name: "Dynamic Programming & Graphs", solved: 0, total: 30, color: "bg-rose-400" },
+      { name: "Operating Systems (Process & Threads)", solved: 0, total: 8, color: "bg-indigo-500" },
+      { name: "DBMS (B+ Trees & ACID Transactions)", solved: 0, total: 8, color: "bg-emerald-500" },
+      { name: "Computer Networks (TCP/IP & Protocols)", solved: 0, total: 6, color: "bg-amber-500" }
+    ];
+    function incrementSolvedCount() {
+      const prob = dsaDatabase[currentIndex];
+      userStats.solved = Math.min(100, userStats.solved + 1);
+      if (prob.difficulty === 'Easy') userStats.easy = Math.min(35, userStats.easy + 1);
+      else if (prob.difficulty === 'Medium') userStats.medium = Math.min(45, userStats.medium + 1);
+      else userStats.hard = Math.min(20, userStats.hard + 1);
+      chaptersData[0].solved = Math.min(chaptersData[0].total, chaptersData[0].solved + 1);
+      updateTrackerUI();
+    }
+    function resetTrackerData() {
+      userStats = { solved: 0, easy: 0, medium: 0, hard: 0, os: 0, dbms: 0, cn: 0 };
+      chaptersData.forEach((ch) => { ch.solved = 0; });
+      updateTrackerUI();
+      alert("Progress tracker stats have been successfully reset to 0!");
+    }
+    function updateTrackerUI() {
+      document.getElementById('statSolved').textContent = `${userStats.solved} / 100`;
+      document.getElementById('statEasy').textContent = `${userStats.easy} / 35`;
+      document.getElementById('statMedium').textContent = `${userStats.medium} / 45`;
+      document.getElementById('statHard').textContent = `${userStats.hard} / 20`;
+      const overallPct = Math.round((userStats.solved / 100) * 100);
+      document.getElementById('overallPercentageLabel').textContent = `${overallPct}% Completed`;
+      document.getElementById('overallProgressBar').style.width = `${overallPct}%`;
+      document.getElementById('dsaPieCenterPct').textContent = `${overallPct}%`;
+      document.getElementById('csPieCenterPct').textContent = `${Math.round(((userStats.os + userStats.dbms + userStats.cn) / 22) * 100)}%`;
+      renderProgressTrackerCharts();
+      renderIndividualChaptersList();
+    }
+    function renderIndividualChaptersList() {
+      const container = document.getElementById('chapterProgressList');
+      if (!container) return;
+      container.innerHTML = '';
+      chaptersData.forEach((ch) => {
+        const pct = Math.round((ch.solved / ch.total) * 100);
+        const row = document.createElement('div');
+        row.className = "bg-slate-50 dark:bg-slate-950 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col gap-2";
+        row.innerHTML = `
+          <div class="flex justify-between items-center text-xs">
+            <span class="font-bold text-slate-800 dark:text-slate-200">${ch.name}</span>
+            <span class="font-mono text-slate-600 dark:text-slate-300 font-semibold">${ch.solved} / ${ch.total} (${pct}%)</span>
+          </div>
+          <div class="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+            <div class="${ch.color} h-full rounded-full transition-all duration-300" style="width: ${pct}%"></div>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+    }
+    function renderProgressTrackerCharts() {
+      const dsaCanvas = document.getElementById('dsaPieCanvas');
+      if (dsaCanvas) {
+        const ctx = dsaCanvas.getContext('2d');
+        ctx.clearRect(0, 0, dsaCanvas.width, dsaCanvas.height);
+        const data = [userStats.easy, userStats.medium, userStats.hard];
+        const colors = ['#34d399', '#fbbf24', '#f43f5e'];
+        let total = data.reduce((a, b) => a + b, 0) || 1;
+        let startAngle = 0;
+        data.forEach((val, i) => {
+          const sliceAngle = (val / total) * (Math.PI * 2);
+          ctx.beginPath(); ctx.moveTo(95, 95); ctx.arc(95, 95, 80, startAngle, startAngle + sliceAngle); ctx.closePath();
+          ctx.fillStyle = colors[i]; ctx.fill(); startAngle += sliceAngle;
+        });
+        ctx.beginPath(); ctx.arc(95, 95, 45, 0, Math.PI * 2); ctx.fillStyle = document.documentElement.classList.contains('dark') ? '#020617' : '#ffffff'; ctx.fill();
+      }
+      const csCanvas = document.getElementById('csPieCanvas');
+      if (csCanvas) {
+        const ctx = csCanvas.getContext('2d');
+        ctx.clearRect(0, 0, csCanvas.width, csCanvas.height);
+        const data = [userStats.os, userStats.dbms, userStats.cn];
+        const colors = ['#6366f1', '#10b981', '#f59e0b'];
+        let total = data.reduce((a, b) => a + b, 0) || 1;
+        let startAngle = 0;
+        data.forEach((val, i) => {
+          const sliceAngle = (val / total) * (Math.PI * 2);
+          ctx.beginPath(); ctx.moveTo(95, 95); ctx.arc(95, 95, 80, startAngle, startAngle + sliceAngle); ctx.closePath();
+          ctx.fillStyle = colors[i]; ctx.fill(); startAngle += sliceAngle;
+        });
+        ctx.beginPath(); ctx.arc(95, 95, 45, 0, Math.PI * 2); ctx.fillStyle = document.documentElement.classList.contains('dark') ? '#020617' : '#ffffff'; ctx.fill();
+      }
+    }
+
+    // Flashcard Renderers
+    let currentFCIndex = 0;
+    let filteredDeck = [...flashcardDeck];
+    let isFlipped = false;
+    function renderFlashcard() {
+      if (filteredDeck.length === 0) return;
+      const fc = filteredDeck[currentFCIndex];
+      document.getElementById('fcCategory').textContent = fc.category;
+      document.getElementById('fcQuestion').textContent = fc.question;
+      document.getElementById('fcAnswer').textContent = fc.answer;
+      document.getElementById('fcKey').textContent = fc.key;
+      document.getElementById('fcNumber').textContent = `Card ${currentFCIndex + 1} of${filteredDeck.length}`;
+      isFlipped = false;
+      document.getElementById('flashcardInner').classList.remove('rotate-y-180');
+    }
+    function flipFlashcard() {
+      isFlipped = !isFlipped;
+      document.getElementById('flashcardInner').classList.toggle('rotate-y-180', isFlipped);
+    }
+    function nextFlashcard() { currentFCIndex = (currentFCIndex + 1) % filteredDeck.length; renderFlashcard(); }
+    function prevFlashcard() { currentFCIndex = (currentFCIndex - 1 + filteredDeck.length) % filteredDeck.length; renderFlashcard(); }
+    function filterFlashcards() {
+      const sel = document.getElementById('flashcardFilter').value;
+      filteredDeck = sel === 'All' ? [...flashcardDeck] : flashcardDeck.filter(f => f.category === sel);
+      currentFCIndex = 0; renderFlashcard();
+    }
+
+    // Mindmap Renderers
+    let activeMindmapNode = null;
+    function renderMindmap() {
+      const canvas = document.getElementById('mindmapCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const selectedKey = document.getElementById('mindmapSelector').value;
+      const map = mindmapData[selectedKey];
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.lineWidth = 2; ctx.strokeStyle = document.documentElement.classList.contains('dark') ? '#334155' : '#cbd5e1';
+      map.edges.forEach(([fromId, toId]) => {
+        const n1 = map.nodes.find(n => n.id === fromId);
+        const n2 = map.nodes.find(n => n.id === toId);
+        if (n1 && n2) {
+          ctx.beginPath(); ctx.moveTo(n1.x, n1.y); ctx.lineTo(n2.x, n2.y); ctx.stroke();
+        }
+      });
+      map.nodes.forEach(node => {
+        ctx.beginPath(); ctx.arc(node.x, node.y, 22, 0, Math.PI * 2);
+        ctx.fillStyle = node.color; ctx.shadowColor = node.color; ctx.shadowBlur = 12; ctx.fill(); ctx.shadowBlur = 0;
+        ctx.strokeStyle = document.documentElement.classList.contains('dark') ? '#ffffff' : '#0f172a'; ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.fillStyle = document.documentElement.classList.contains('dark') ? '#f8fafc' : '#0f172a'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(node.label, node.x, node.y + 36);
+      });
+    }
+    document.getElementById('mindmapCanvas').addEventListener('click', (e) => {
+      const canvas = document.getElementById('mindmapCanvas');
+      const rect = canvas.getBoundingClientRect();
+      const clickX = (e.clientX - rect.left) * (canvas.width / rect.width);
+      const clickY = (e.clientY - rect.top) * (canvas.height / rect.height);
+      const map = mindmapData[document.getElementById('mindmapSelector').value];
+      const clicked = map.nodes.find(n => Math.sqrt((n.x - clickX)**2 + (n.y - clickY)**2) <= 25);
+      if (clicked) {
+        activeMindmapNode = clicked;
+        document.getElementById('inspectorTitle').textContent = `Module: ${clicked.label}`;
+        document.getElementById('inspectorDesc').textContent = clicked.desc;
+      }
+    });
+    function askAIAssistantAboutNode() {
+      if (!activeMindmapNode) { alert("Click a mindmap node first!"); return; }
+      openGeminiModal();
+      document.getElementById('modalAIInput').value = `Explain '${activeMindmapNode.label}' in detail and give interview questions.`;
+      sendModalAIMessage();
+    }
+
+    // Gemini Flash AI Model Integration
+    let modalAIMode = 'chat';
+    let isModalVoiceRecording = false;
+    let modalVoiceRecognition = null;
+    function openGeminiModal() { document.getElementById('geminiModalOverlay').classList.remove('hidden'); }
+    function closeGeminiModal() { document.getElementById('geminiModalOverlay').classList.add('hidden'); stopModalAIVoice(); }
+    function setModalAIMode(mode) {
+      modalAIMode = mode;
+      document.getElementById('modalModeChat').className = mode === 'chat' ? "px-2.5 py-1 rounded-md text-[11px] font-medium bg-brand-600 text-white transition" : "px-2.5 py-1 rounded-md text-[11px] font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition";
+      document.getElementById('modalModeVoice').className = mode === 'voice' ? "px-2.5 py-1 rounded-md text-[11px] font-medium bg-brand-600 text-white transition" : "px-2.5 py-1 rounded-md text-[11px] font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition";
+      if (mode === 'chat') stopModalAIVoice();
+    }
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      modalVoiceRecognition = new SpeechRecognition();
+      modalVoiceRecognition.onresult = (e) => {
+        const transcript = e.results[0][0].transcript;
+        document.getElementById('modalAIInput').value = transcript;
+        sendModalAIMessage(transcript, true);
+      };
+    }
+    function toggleModalMicRecording() {
+      if (!modalVoiceRecognition) { alert("Speech recognition not supported in this browser."); return; }
+      if (isModalVoiceRecording) { 
+        modalVoiceRecognition.stop(); 
+        isModalVoiceRecording = false; 
+        document.getElementById('modalVoiceBlob').classList.add('hidden');
+      } else { 
+        modalVoiceRecognition.start(); 
+        isModalVoiceRecording = true; 
+        document.getElementById('modalVoiceBlob').classList.remove('hidden');
+      }
+    }
+    function speakModalText(text) {
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text.replace(/[*#`_]/g, ''));
+      const banner = document.getElementById('modalAudioBanner');
+      banner.classList.remove('hidden');
+      utterance.onend = () => banner.classList.add('hidden');
+      window.speechSynthesis.speak(utterance);
+    }
+    function stopModalAIVoice() { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); document.getElementById('modalAudioBanner').classList.add('hidden'); }
+    
+    function submitGeminiKey() {
+      const key = document.getElementById('geminiModalKey').value.trim();
+      if (key) {
+        localStorage.setItem('edumate_api_key', key);
+        alert("Gemini API key saved successfully!");
+      } else {
+        alert("Please enter a valid Gemini API key before submitting.");
+      }
+    }
+    async function sendModalAIMessage(customQuery = null, forceAudio = false) {
+      const input = document.getElementById('modalAIInput');
+      const query = (customQuery || input.value).trim();
+      if (!query) return;
+      const feed = document.getElementById('modalAIFeed');
+      const userDiv = document.createElement('div');
+      userDiv.className = "bg-slate-100 dark:bg-slate-950 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800";
+      userDiv.innerHTML = `<div class="text-[10px] text-amber-600 dark:text-amber-400 font-semibold mb-0.5">You</div><p class="text-slate-800 dark:text-slate-300 text-xs">${query}</p>`;
+      feed.appendChild(userDiv);
+      input.value = '';
+      feed.scrollTop = feed.scrollHeight;
+
+      const loadingDiv = document.createElement('div');
+      loadingDiv.className = "bg-slate-100 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-xs text-amber-600 dark:text-amber-300";
+      loadingDiv.innerHTML = `<span>Gemini is thinking...</span>`;
+      feed.appendChild(loadingDiv);
+      feed.scrollTop = feed.scrollHeight;
+
+      const apiKey = localStorage.getItem('edumate_api_key') || document.getElementById('geminiModalKey').value.trim();
+      try {
+        let aiResponse = "";
+        if (apiKey) {
+          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+          const res = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: query }] }]
+            })
+          });
+          if (!res.ok) {
+            const errData = await res.json();
+            throw new Error(errData.error?.message || `HTTP ${res.status}`);
+          }
+          const data = await res.json();
+          aiResponse = data.candidates[0].content.parts[0].text;
+        } else {
+          aiResponse = `(Offline Simulation): You asked: "${query}". Enter and submit a valid Gemini API key at the top to connect to live AI responses!`;
+        }
+        feed.removeChild(loadingDiv);
+        const aiDiv = document.createElement('div');
+        aiDiv.className = "bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-amber-500/20";
+        
+        const headerDiv = document.createElement('div');
+        headerDiv.className = "flex items-center justify-between text-[10px] text-amber-600 dark:text-amber-400 mb-1 font-semibold";
+        headerDiv.innerHTML = `<span>Gemini AI</span>`;
+        
+        const speakBtn = document.createElement('button');
+        speakBtn.className = "text-amber-600 dark:text-amber-300 hover:text-slate-900 dark:hover:text-white";
+        speakBtn.textContent = "Speak";
+        speakBtn.onclick = () => speakModalText(aiResponse);
+        headerDiv.appendChild(speakBtn);
+
+        const textDiv = document.createElement('div');
+        textDiv.className = "text-slate-800 dark:text-slate-200 text-xs leading-relaxed whitespace-pre-wrap";
+        textDiv.textContent = aiResponse;
+
+        aiDiv.appendChild(headerDiv);
+        aiDiv.appendChild(textDiv);
+        feed.appendChild(aiDiv);
+
+        if (forceAudio || modalAIMode === 'voice') speakModalText(aiResponse);
+      } catch (err) {
+        if (loadingDiv.parentNode) feed.removeChild(loadingDiv);
+        const errDiv = document.createElement('div');
+        errDiv.className = "bg-rose-50 dark:bg-rose-950/40 p-2.5 rounded-xl border border-rose-200 dark:border-rose-800/40 text-rose-600 dark:text-rose-300 text-xs";
+        errDiv.textContent = `API Error: ${err.message}. Please verify your Gemini API key.`;
+        feed.appendChild(errDiv);
+      } finally {
+        feed.scrollTop = feed.scrollHeight;
+        lucide.createIcons();
+      }
+    }
+
+    // Team Chat
+    function sendTeamMessage() {
+      const input = document.getElementById('teamChatInput');
+      const text = input.value.trim();
+      if (!text) return;
+      const feed = document.getElementById('teamChatFeed');
+      const msgDiv = document.createElement('div');
+      msgDiv.className = "bg-slate-50 dark:bg-slate-950 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800";
+      msgDiv.innerHTML = `
+        <div class="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 mb-0.5">
+          <span class="font-semibold text-brand-600 dark:text-brand-400">${currentUser ? currentUser.name : "You"}</span>
+          <span>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+        </div>
+        <p class="text-slate-700 dark:text-slate-300 leading-relaxed">${text}</p>
+      `;
+      feed.appendChild(msgDiv);
+      feed.scrollTop = feed.scrollHeight;
+      input.value = '';
+    }
+
+    // Lifecycle Bootstrap
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      initSelector();
+      checkActiveSession();
+      initThemeMode();
+      initStreakSystem();
+      updateTrackerUI();
+      renderFlashcard();
+      renderSprintList();
+      const savedKey = localStorage.getItem('edumate_api_key');
+      if (savedKey) document.getElementById('geminiModalKey').value = savedKey;
+    });
+  </script>
+</body>
+</html>
